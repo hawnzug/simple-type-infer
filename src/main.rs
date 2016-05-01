@@ -17,8 +17,7 @@ fn main() {
         match io::stdin().read_line(&mut input) {
             Ok(0) => break,
             Ok(_) => {
-                let s = eval::rep(&input);
-                println!("{}", s);
+                eval::trep(&input);
             }
             Err(error) => println!("{}", error),
         }

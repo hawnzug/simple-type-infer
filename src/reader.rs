@@ -3,31 +3,31 @@ use chomp::ascii::is_alpha;
 use chomp::ascii::is_digit;
 use chomp::ascii::skip_whitespace;
 use std::str::from_utf8;
-use types::MalType;
+use types::Term;
 
-pub fn read_str(s: &str) -> MalType {
+pub fn read_str(s: &str) -> Term {
     match parse_only(parse_all, s.as_bytes()) {
-        Ok(e@MalType::Error(_)) => e,
+        Ok(e@Term::Error(_)) => e,
         Ok(m) => m,
-        _ => MalType::Error("Syntax Error".to_string()),
+        _ => Term::Error("Syntax Error".to_string()),
     }
 }
 
-fn parse_int(i: Input<u8>) -> U8Result<MalType> {
+fn parse_int(i: Input<u8>) -> U8Result<Term> {
     parse!{i;
         let later = take_while1(is_digit);
         ret to_malint(from_utf8(later).unwrap().to_string())
     }
 }
 
-fn parse_symbol(i: Input<u8>) -> U8Result<MalType> {
+fn parse_symbol(i: Input<u8>) -> U8Result<Term> {
     parse!{i;
         let s = take_while1(is_alpha);
-        ret MalType::Symbol(from_utf8(s).unwrap().to_string())
+        ret Term::Symbol(from_utf8(s).unwrap().to_string())
     }
 }
 
-fn parse_lambda(i: Input<u8>) -> U8Result<MalType> {
+fn parse_lambda(i: Input<u8>) -> U8Result<Term> {
     parse!{i;
         token(b'(');
         skip_whitespace();
@@ -36,11 +36,11 @@ fn parse_lambda(i: Input<u8>) -> U8Result<MalType> {
         let arg = take_while1(is_alpha);
         let body = parse_all();
         token(b')');
-        ret MalType::Lambda(from_utf8(arg).unwrap().to_string(), Box::new(body))
+        ret Term::Lambda(from_utf8(arg).unwrap().to_string(), Box::new(body))
     }
 }
 
-fn parse_add(i: Input<u8>) -> U8Result<MalType> {
+fn parse_add(i: Input<u8>) -> U8Result<Term> {
     parse!{i;
         token(b'(');
         skip_whitespace();
@@ -49,11 +49,11 @@ fn parse_add(i: Input<u8>) -> U8Result<MalType> {
         let a = parse_all();
         let b = parse_all();
         token(b')');
-        ret MalType::Add(Box::new(a), Box::new(b))
+        ret Term::Add(Box::new(a), Box::new(b))
     }
 }
 
-fn parse_if(i: Input<u8>) -> U8Result<MalType> {
+fn parse_if(i: Input<u8>) -> U8Result<Term> {
     parse!{i;
         token(b'(');
         skip_whitespace();
@@ -63,21 +63,21 @@ fn parse_if(i: Input<u8>) -> U8Result<MalType> {
         let b = parse_all();
         let c = parse_all();
         token(b')');
-        ret MalType::If(Box::new(a), Box::new(b), Box::new(c))
+        ret Term::If(Box::new(a), Box::new(b), Box::new(c))
     }
 }
 
-fn parse_apply(i: Input<u8>) -> U8Result<MalType> {
+fn parse_apply(i: Input<u8>) -> U8Result<Term> {
     parse!{i;
         token(b'(');
         let func = parse_all();
         let arg = parse_all();
         token(b')');
-        ret MalType::Apply(Box::new(func), Box::new(arg))
+        ret Term::Apply(Box::new(func), Box::new(arg))
     }
 }
 
-fn parse_all(i: Input<u8>) -> U8Result<MalType> {
+fn parse_all(i: Input<u8>) -> U8Result<Term> {
     let r = parser!{
         parse_int() <|>
         parse_symbol() <|>
@@ -94,9 +94,9 @@ fn parse_all(i: Input<u8>) -> U8Result<MalType> {
     }
 }
 
-fn to_malint(c: String) -> MalType {
+fn to_malint(c: String) -> Term {
     match c.parse::<u32>() {
-        Ok(x) => MalType::Int(x),
-        _ => MalType::Error("Number overflow".to_string()),
+        Ok(x) => Term::Int(x),
+        _ => Term::Error("Number overflow".to_string()),
     }
 }
